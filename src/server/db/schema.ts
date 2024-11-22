@@ -5,6 +5,8 @@ import { sql } from "drizzle-orm";
 import {
 	index,
 	integer,
+	text,
+	boolean,
 	pgTableCreator,
 	timestamp,
 	varchar,
@@ -36,3 +38,19 @@ export const posts = createTable(
 		nameIndex: index("name_idx").on(example.name),
 	}),
 );
+
+export const todos = createTable(
+	"todo",
+	{
+		id: text("id").primaryKey(),
+		title: text("title").notNull(),
+		isCompleted: boolean("is_completed").default(false).notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.default(sql`CURRENT_TIMESTAMP`)
+			.notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+			() => new Date(),
+		),
+	},
+);
+
