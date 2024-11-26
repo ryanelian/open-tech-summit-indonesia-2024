@@ -1,8 +1,10 @@
 import { eq } from "drizzle-orm";
-import { z } from "zod";
-
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { todos } from "~/server/db/schema";
+import { createSchema } from "~/validations/todos/createSchema";
+import { deleteSchema } from "~/validations/todos/deleteSchema";
+import { editSchema } from "~/validations/todos/editSchema";
+import { markAsCompletedSchema } from "~/validations/todos/markAsCompletedSchema";
 
 export const todoRouter = createTRPCRouter({
 	getAll: publicProcedure.query(async ({ ctx }) => {
@@ -13,7 +15,7 @@ export const todoRouter = createTRPCRouter({
 	}),
 
 	create: publicProcedure
-		.input(z.object({ title: z.string().min(1) }))
+		.input(createSchema)
 		.mutation(async ({ ctx, input }) => {
 			await ctx.db.insert(todos).values({
 				id: crypto.randomUUID(),
@@ -21,19 +23,17 @@ export const todoRouter = createTRPCRouter({
 			});
 		}),
 
-	edit: publicProcedure
-		.input(z.object({ id: z.string().uuid(), title: z.string().min(1) }))
-		.mutation(async ({ ctx, input }) => {
-			await ctx.db
-				.update(todos)
-				.set({
-					title: input.title,
-				})
-				.where(eq(todos.id, input.id));
-		}),
+	edit: publicProcedure.input(editSchema).mutation(async ({ ctx, input }) => {
+		await ctx.db
+			.update(todos)
+			.set({
+				title: input.title,
+			})
+			.where(eq(todos.id, input.id));
+	}),
 
 	markAsCompleted: publicProcedure
-		.input(z.object({ id: z.string().uuid() }))
+		.input(markAsCompletedSchema)
 		.mutation(async ({ ctx, input }) => {
 			await ctx.db
 				.update(todos)
@@ -44,7 +44,7 @@ export const todoRouter = createTRPCRouter({
 		}),
 
 	delete: publicProcedure
-		.input(z.object({ id: z.string().uuid() }))
+		.input(deleteSchema)
 		.mutation(async ({ ctx, input }) => {
 			await ctx.db.delete(todos).where(eq(todos.id, input.id));
 		}),
